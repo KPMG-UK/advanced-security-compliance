@@ -36,6 +36,11 @@ inputs:
   argvs:
     description: 'Additional Arguments'
 
+outputs:
+  errors:
+    value: ${{ steps.script.outputs.errors }}
+    description: "All non-compliant resources detected by this action"
+
 
 runs:
   using: "composite"
@@ -48,6 +53,7 @@ runs:
         popd
         echo "::endgroup::"
     - shell: bash
+      id: script
       run: |
         PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
         python3 -m ghascompliance \

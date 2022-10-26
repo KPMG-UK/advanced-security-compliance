@@ -30,8 +30,9 @@ parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
 parser.add_argument("--disable-dependency-licensing", action="store_true")
 parser.add_argument("--disable-dependencies", action="store_true")
-parser.add_argument("--disable-secret-scanning", action="store_true")   
+parser.add_argument("--disable-secret-scanning", action="store_true")
 parser.add_argument("--is-github-app-token", action="store_true", default=False)
+parser.add_argument("--verbose-output", action="store_true", default=False)
 
 github_arguments = parser.add_argument_group("GitHub")
 github_arguments.add_argument("--github-token", default=GITHUB_TOKEN)
@@ -191,6 +192,10 @@ if __name__ == "__main__":
             raise err
 
     Octokit.info("Total unacceptable alerts :: " + str(errors))
+    if arguments.verbose_output:
+        for error in errors:
+            Octokit.info(error)
+    Octokit.setOutput("errors", errors)
 
     if arguments.action == "break" and errors > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
