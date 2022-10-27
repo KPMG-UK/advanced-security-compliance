@@ -205,9 +205,9 @@ if __name__ == "__main__":
     Octokit.info("Total unacceptable alerts :: " + str(error_count))
     if arguments.verbose_output:
 
-        Octokit.info(f"Unacceptable alerts :: {errors}")
+        Octokit.info(f"Unacceptable alerts :: {error_list}")
 
-    Octokit.setOutput("errors", errors)
+    Octokit.setOutput("errors", error_list)
 
     if arguments.action == "break" and error_count > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
