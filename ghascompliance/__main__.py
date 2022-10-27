@@ -204,8 +204,8 @@ if __name__ == "__main__":
 
     Octokit.info("Total unacceptable alerts :: " + str(error_count))
     if arguments.verbose_output:
-        for error in errors:
-            Octokit.info(error)
+
+        Octokit.info(f"Unacceptable alerts :: {errors}")
 
     Octokit.setOutput("errors", errors)
 
