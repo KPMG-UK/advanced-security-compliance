@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
     Octokit.setOutput("errors", errors)
 
-    if arguments.action == "break" and errors > 0:
+    if arguments.action == "break" and error_count > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
         exit(1)
     elif arguments.action == "continue":
