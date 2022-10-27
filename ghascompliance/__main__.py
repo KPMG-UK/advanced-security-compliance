@@ -164,25 +164,36 @@ if __name__ == "__main__":
         caching=arguments.disable_caching,
     )
 
-    errors = 0
+    error_count = 0
+    error_list = []
 
     try:
         if not arguments.disable_code_scanning:
-            errors += checks.checkCodeScanning()
+            amount_errors, errors = checks.checkCodeScanning()
+            error_count += amount_errors
+            error_list.extend(errors)
 
         if not arguments.disable_dependabot:
-            errors += checks.checkDependabot()
+            amount_errors, errors = checks.checkDependabot()
+            error_count += amount_errors
+            error_list.extend(errors)
 
         # Dependency Graph
         if not arguments.disable_dependencies:
-            errors += checks.checkDependencies()
+            amount_errors, errors = checks.checkDependencies()
+            error_count += amount_errors
+            error_list.extend(errors)
 
         # Dependency Graph Licensing
         if not arguments.disable_dependency_licensing:
-            errors += checks.checkDependencyLicensing()
+            amount_errors, errors = checks.checkDependencyLicensing()
+            error_count += amount_errors
+            error_list.extend(errors)
 
         if not arguments.disable_secret_scanning:
-            errors += checks.checkSecretScanning()
+            amount_errors, errors = checks.checkSecretScanning()
+            error_count += amount_errors
+            error_list.extend(errors)
 
     except Exception as err:
         Octokit.error("Unknown Exception was hit, please repo this to " + __url__)
@@ -191,10 +202,11 @@ if __name__ == "__main__":
         if arguments.debug:
             raise err
 
-    Octokit.info("Total unacceptable alerts :: " + str(errors))
+    Octokit.info("Total unacceptable alerts :: " + str(error_count))
     if arguments.verbose_output:
         for error in errors:
             Octokit.info(error)
+
     Octokit.setOutput("errors", errors)
 
     if arguments.action == "break" and errors > 0:
