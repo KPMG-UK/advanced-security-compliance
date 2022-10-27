@@ -5,7 +5,7 @@ import logging
 
 from ghascompliance.__version__ import __name__ as tool_name, __banner__, __url__
 from ghascompliance.consts import SEVERITIES
-from ghascompliance.octokit import Octokit, GitHub
+from ghascompliance.octokit import Octokit, GitHub, dependabot
 from ghascompliance.policy import Policy
 from ghascompliance.checks import *
 
@@ -169,31 +169,36 @@ if __name__ == "__main__":
 
     try:
         if not arguments.disable_code_scanning:
-            amount_errors, errors = checks.checkCodeScanning()
-            error_count += amount_errors
-            error_list.extend(errors)
+            code_scanning_error_count, code_scanning_errors = checks.checkCodeScanning()
+            error_count += code_scanning_error_count
+            error_list.extend(code_scanning_errors)
+            code_scanning_pass = True if code_scanning_error_count == 0 else False
 
         if not arguments.disable_dependabot:
-            amount_errors, errors = checks.checkDependabot()
-            error_count += amount_errors
-            error_list.extend(errors)
+            dependabot_error_count, dependabot_errors = checks.checkDependabot()
+            error_count += dependabot_error_count
+            error_list.extend(dependabot_errors)
+            dependabot_pass = True if dependabot_error_count == 0 else False
 
         # Dependency Graph
         if not arguments.disable_dependencies:
-            amount_errors, errors = checks.checkDependencies()
-            error_count += amount_errors
-            error_list.extend(errors)
+            dependency_error_count, dependency_errors = checks.checkDependencies()
+            error_count += dependency_error_count
+            error_list.extend(dependabot_errors)
+            dependency_pass = True if dependency_error_count == 0 else False
 
         # Dependency Graph Licensing
         if not arguments.disable_dependency_licensing:
-            amount_errors, errors = checks.checkDependencyLicensing()
-            error_count += amount_errors
-            error_list.extend(errors)
+            licensing_error_count, licensing_errors = checks.checkDependencyLicensing()
+            error_count += licensing_error_count
+            error_list.extend(licensing_errors)
+            license_pass = True if licensing_error_count == 0 else False
 
         if not arguments.disable_secret_scanning:
-            amount_errors, errors = checks.checkSecretScanning()
-            error_count += amount_errors
-            error_list.extend(errors)
+            secret_error_count, secret_errors = checks.checkSecretScanning()
+            error_count += secret_error_count
+            error_list.extend(secret_errors)
+            secret_pass = True if secret_error_count == 0 else False
 
     except Exception as err:
         Octokit.error("Unknown Exception was hit, please repo this to " + __url__)
@@ -214,7 +219,7 @@ if __name__ == "__main__":
         exit(1)
     elif arguments.action == "continue":
         Octokit.debug("Skipping threshold break check...")
-    elif errors == 0:
+    elif error_count == 0:
         Octokit.info("Acceptable risk and no threshold reached.")
     else:
         Octokit.error("Unknown action type :: " + str(arguments.action))
