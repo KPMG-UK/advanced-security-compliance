@@ -37,9 +37,27 @@ inputs:
     description: 'Additional Arguments'
 
 outputs:
-  errors:
-    value: ${{ steps.script.outputs.errors }}
-    description: "All non-compliant resources detected by this action"
+  codeScanningCompliant:
+    value: ${{ steps.script.outputs.codeScanningPass }}
+    description: "The pass/fail status of code scanning."
+  
+  dependabotCompliant:
+    value: ${{ steps.script.outputs.dependabotPass }}
+    description: "The pass/fail status of dependabot."
+
+  dependencyCompliant:
+    value: ${{ steps.script.outputs.dependencyPass }}
+    description: "The pass/fail status of your dependency tree"
+  
+  licensingComplaint:
+    value: ${{ steps.script.outputs.licensingPass }}
+    description: "The pass/fail status of your dependency licenses"
+  
+  secretScanningCompliant:
+    value: ${{ steps.script.outputs.secretScanningPass }}
+    description: "The pass/fail status of secret scanning"
+
+
 
 
 runs:
