@@ -32,7 +32,6 @@ parser.add_argument("--disable-dependency-licensing", action="store_true")
 parser.add_argument("--disable-dependencies", action="store_true")
 parser.add_argument("--disable-secret-scanning", action="store_true")
 parser.add_argument("--is-github-app-token", action="store_true", default=False)
-parser.add_argument("--verbose-output", action="store_true", default=False)
 
 github_arguments = parser.add_argument_group("GitHub")
 github_arguments.add_argument("--github-token", default=GITHUB_TOKEN)
@@ -173,12 +172,22 @@ if __name__ == "__main__":
             error_count += code_scanning_error_count
             error_list.extend(code_scanning_errors)
             code_scanning_pass = True if code_scanning_error_count == 0 else False
+            if not code_scanning_pass:
+                Octokit.warning("Code Scanning status: FAIL")
+            else:
+                Octokit.info("Code Scanning status: PASS")
+            Octokit.setOutput("codeScanningPass", code_scanning_pass)
 
         if not arguments.disable_dependabot:
             dependabot_error_count, dependabot_errors = checks.checkDependabot()
             error_count += dependabot_error_count
             error_list.extend(dependabot_errors)
             dependabot_pass = True if dependabot_error_count == 0 else False
+            if not dependabot_pass:
+                Octokit.warning("Dependabot status: FAIL")
+            else:
+                Octokit.info("Dependabot status: PASS")
+            Octokit.setOutput("dependabotPass", dependabot_pass)
 
         # Dependency Graph
         if not arguments.disable_dependencies:
@@ -186,6 +195,11 @@ if __name__ == "__main__":
             error_count += dependency_error_count
             error_list.extend(dependabot_errors)
             dependency_pass = True if dependency_error_count == 0 else False
+            if not dependency_pass:
+                Octokit.warning("Dependency status: FAIL")
+            else:
+                Octokit.info("Dependency status: PASS")
+            Octokit.setOutput("dependencyPass", dependabot_pass)
 
         # Dependency Graph Licensing
         if not arguments.disable_dependency_licensing:
@@ -193,12 +207,22 @@ if __name__ == "__main__":
             error_count += licensing_error_count
             error_list.extend(licensing_errors)
             license_pass = True if licensing_error_count == 0 else False
+            if not license_pass:
+                Octokit.warning("Licensing status: FAIL")
+            else:
+                Octokit.info("Licensing status: PASS")
+            Octokit.setOutput("licensingPass", license_pass)
 
         if not arguments.disable_secret_scanning:
             secret_error_count, secret_errors = checks.checkSecretScanning()
             error_count += secret_error_count
             error_list.extend(secret_errors)
             secret_pass = True if secret_error_count == 0 else False
+            if not secret_pass:
+                Octokit.warning("Secret Scanning status: FAIL")
+            else:
+                Octokit.info("Secret scanning status: PASS")
+            Octokit.setOutput("secretScanningPass", secret_pass)
 
     except Exception as err:
         Octokit.error("Unknown Exception was hit, please repo this to " + __url__)
@@ -208,11 +232,6 @@ if __name__ == "__main__":
             raise err
 
     Octokit.info("Total unacceptable alerts :: " + str(error_count))
-    if arguments.verbose_output:
-
-        Octokit.info(f"Unacceptable alerts :: {error_list}")
-
-    Octokit.setOutput("errors", error_list)
 
     if arguments.action == "break" and error_count > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
