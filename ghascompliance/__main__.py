@@ -5,7 +5,7 @@ import logging
 
 from ghascompliance.__version__ import __name__ as tool_name, __banner__, __url__
 from ghascompliance.consts import SEVERITIES
-from ghascompliance.octokit import Octokit, GitHub
+from ghascompliance.octokit import Octokit, GitHub, dependabot
 from ghascompliance.policy import Policy
 from ghascompliance.checks import *
 
@@ -30,7 +30,7 @@ parser.add_argument("--disable-code-scanning", action="store_true")
 parser.add_argument("--disable-dependabot", action="store_true")
 parser.add_argument("--disable-dependency-licensing", action="store_true")
 parser.add_argument("--disable-dependencies", action="store_true")
-parser.add_argument("--disable-secret-scanning", action="store_true")   
+parser.add_argument("--disable-secret-scanning", action="store_true")
 parser.add_argument("--is-github-app-token", action="store_true", default=False)
 
 github_arguments = parser.add_argument_group("GitHub")
@@ -163,25 +163,66 @@ if __name__ == "__main__":
         caching=arguments.disable_caching,
     )
 
-    errors = 0
+    error_count = 0
+    error_list = []
 
     try:
         if not arguments.disable_code_scanning:
-            errors += checks.checkCodeScanning()
+            code_scanning_error_count, code_scanning_errors = checks.checkCodeScanning()
+            error_count += code_scanning_error_count
+            error_list.extend(code_scanning_errors)
+            code_scanning_pass = True if code_scanning_error_count == 0 else False
+            if not code_scanning_pass:
+                Octokit.warning("Code Scanning status: FAIL")
+            else:
+                Octokit.info("Code Scanning status: PASS")
+            Octokit.setOutput("codeScanningPass", code_scanning_pass)
 
         if not arguments.disable_dependabot:
-            errors += checks.checkDependabot()
+            dependabot_error_count, dependabot_errors = checks.checkDependabot()
+            error_count += dependabot_error_count
+            error_list.extend(dependabot_errors)
+            dependabot_pass = True if dependabot_error_count == 0 else False
+            if not dependabot_pass:
+                Octokit.warning("Dependabot status: FAIL")
+            else:
+                Octokit.info("Dependabot status: PASS")
+            Octokit.setOutput("dependabotPass", dependabot_pass)
 
         # Dependency Graph
         if not arguments.disable_dependencies:
-            errors += checks.checkDependencies()
+            dependency_error_count, dependency_errors = checks.checkDependencies()
+            error_count += dependency_error_count
+            error_list.extend(dependabot_errors)
+            dependency_pass = True if dependency_error_count == 0 else False
+            if not dependency_pass:
+                Octokit.warning("Dependency status: FAIL")
+            else:
+                Octokit.info("Dependency status: PASS")
+            Octokit.setOutput("dependencyPass", dependabot_pass)
 
         # Dependency Graph Licensing
         if not arguments.disable_dependency_licensing:
-            errors += checks.checkDependencyLicensing()
+            licensing_error_count, licensing_errors = checks.checkDependencyLicensing()
+            error_count += licensing_error_count
+            error_list.extend(licensing_errors)
+            license_pass = True if licensing_error_count == 0 else False
+            if not license_pass:
+                Octokit.warning("Licensing status: FAIL")
+            else:
+                Octokit.info("Licensing status: PASS")
+            Octokit.setOutput("licensingPass", license_pass)
 
         if not arguments.disable_secret_scanning:
-            errors += checks.checkSecretScanning()
+            secret_error_count, secret_errors = checks.checkSecretScanning()
+            error_count += secret_error_count
+            error_list.extend(secret_errors)
+            secret_pass = True if secret_error_count == 0 else False
+            if not secret_pass:
+                Octokit.warning("Secret Scanning status: FAIL")
+            else:
+                Octokit.info("Secret scanning status: PASS")
+            Octokit.setOutput("secretScanningPass", secret_pass)
 
     except Exception as err:
         Octokit.error("Unknown Exception was hit, please repo this to " + __url__)
@@ -190,14 +231,14 @@ if __name__ == "__main__":
         if arguments.debug:
             raise err
 
-    Octokit.info("Total unacceptable alerts :: " + str(errors))
+    Octokit.info("Total unacceptable alerts :: " + str(error_count))
 
-    if arguments.action == "break" and errors > 0:
+    if arguments.action == "break" and error_count > 0:
         Octokit.error("Unacceptable Threshold of Risk has been hit!")
         exit(1)
     elif arguments.action == "continue":
         Octokit.debug("Skipping threshold break check...")
-    elif errors == 0:
+    elif error_count == 0:
         Octokit.info("Acceptable risk and no threshold reached.")
     else:
         Octokit.error("Unknown action type :: " + str(arguments.action))
